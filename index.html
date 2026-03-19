@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CF Event - Carbon Footprint for Event</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { thai: ['Noto Sans Thai', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d' },
+                        carbon: { light:'#e0f2fe', DEFAULT:'#0ea5e9', dark:'#0369a1' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Noto Sans Thai', sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .nav-link.active { background: linear-gradient(135deg, #16a34a, #15803d); color: white; }
+        .nav-link:hover:not(.active) { background-color: #f0fdf4; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .gradient-bg { background: linear-gradient(135deg, #16a34a 0%, #0ea5e9 100%); }
+        .sidebar { transition: transform 0.3s ease; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; } .sidebar.open { transform: translateX(0); } }
+        input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+        .scope-badge-1 { background: #fef3c7; color: #92400e; }
+        .scope-badge-2 { background: #dbeafe; color: #1e40af; }
+        .scope-badge-3 { background: #fce7f3; color: #9d174d; }
+    </style>
+</head>
+<body class="bg-gray-50 font-thai">
+    <!-- Mobile Menu Button -->
+    <button id="menuBtn" class="md:hidden fixed top-4 left-4 z-50 bg-primary-600 text-white p-2 rounded-lg shadow-lg">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar w-72 bg-white shadow-xl flex-shrink-0 flex flex-col h-screen sticky top-0">
+            <div class="gradient-bg p-6 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-leaf text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">CF Event</h1>
+                        <p class="text-sm opacity-80">Carbon Footprint</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="#" data-page="dashboard" class="nav-link active flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all">
+                    <i class="fas fa-chart-pie w-5 text-center"></i> แดชบอร์ด
+                </a>
+
+                <div class="pt-3 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Scope 1 - การเผาไหม้โดยตรง</div>
+                <a href="#" data-page="cooking" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-fire-burner w-5 text-center"></i> การปรุงอาหาร
+                </a>
+
+                <div class="pt-3 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Scope 2 - พลังงานไฟฟ้า</div>
+                <a href="#" data-page="electricity" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-bolt w-5 text-center"></i> พลังงานไฟฟ้า
+                </a>
+
+                <div class="pt-3 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Scope 3 - ทางอ้อม</div>
+                <a href="#" data-page="transport" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-car w-5 text-center"></i> การเดินทาง
+                </a>
+                <a href="#" data-page="accommodation" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-hotel w-5 text-center"></i> การพักแรม
+                </a>
+                <a href="#" data-page="food" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-utensils w-5 text-center"></i> อาหาร
+                </a>
+                <a href="#" data-page="documents" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-file-alt w-5 text-center"></i> เอกสารแจก
+                </a>
+                <a href="#" data-page="waste" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-trash-alt w-5 text-center"></i> ของเสีย
+                </a>
+
+                <div class="pt-3 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">อ้างอิงและรายงาน</div>
+                <a href="#" data-page="ef-reference" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-book w-5 text-center"></i> ค่า EF อ้างอิง
+                </a>
+                <a href="#" data-page="distance" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-route w-5 text-center"></i> ระยะทาง
+                </a>
+                <a href="#" data-page="report" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all">
+                    <i class="fas fa-file-export w-5 text-center"></i> รายงานสรุป
+                </a>
+            </nav>
+
+            <div class="p-4 border-t">
+                <button onclick="resetAll()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition">
+                    <i class="fas fa-rotate-left"></i> รีเซ็ตข้อมูลทั้งหมด
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 min-h-screen">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+                <div>
+                    <h2 id="pageTitle" class="text-xl font-bold text-gray-800">แดชบอร์ด</h2>
+                    <p id="pageSubtitle" class="text-sm text-gray-500">ภาพรวม Carbon Footprint ของงานอีเวนต์</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-sm font-semibold text-gray-700" id="totalDisplay">0.00 tCO2e</div>
+                        <div class="text-xs text-gray-500">รวมทั้งหมด</div>
+                    </div>
+                    <div class="w-10 h-10 gradient-bg rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-6">
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page active fade-in">
+                    <!-- Event Info Card -->
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4"><i class="fas fa-calendar-alt text-primary-600 mr-2"></i>ข้อมูลงานอีเวนต์</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">ชื่องาน</label>
+                                <input type="text" id="eventName" class="w-full border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary-400 focus:border-transparent" placeholder="ระบุชื่องาน" oninput="saveEventInfo()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">วันที่จัดงาน</label>
+                                <input type="date" id="eventDate" class="w-full border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary-400" oninput="saveEventInfo()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">จำนวนผู้เข้าร่วม (คน)</label>
+                                <input type="number" id="eventAttendees" class="w-full border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="saveEventInfo()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-2xl shadow-sm border p-5 card-hover transition-all">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center"><i class="fas fa-fire text-amber-600"></i></div>
+                                <span class="scope-badge-1 text-xs px-2 py-1 rounded-full font-medium">Scope 1</span>
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800" id="scope1Total">0.00</div>
+                            <div class="text-sm text-gray-500">kgCO2e</div>
+                            <div class="mt-2 text-xs text-gray-400" id="scope1Pct">0% ของทั้งหมด</div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border p-5 card-hover transition-all">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-bolt text-blue-600"></i></div>
+                                <span class="scope-badge-2 text-xs px-2 py-1 rounded-full font-medium">Scope 2</span>
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800" id="scope2Total">0.00</div>
+                            <div class="text-sm text-gray-500">kgCO2e</div>
+                            <div class="mt-2 text-xs text-gray-400" id="scope2Pct">0% ของทั้งหมด</div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border p-5 card-hover transition-all">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center"><i class="fas fa-globe text-pink-600"></i></div>
+                                <span class="scope-badge-3 text-xs px-2 py-1 rounded-full font-medium">Scope 3</span>
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800" id="scope3Total">0.00</div>
+                            <div class="text-sm text-gray-500">kgCO2e</div>
+                            <div class="mt-2 text-xs text-gray-400" id="scope3Pct">0% ของทั้งหมด</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl shadow-sm p-5 text-white card-hover transition-all">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="fas fa-leaf text-white"></i></div>
+                                <span class="bg-white/20 text-xs px-2 py-1 rounded-full font-medium">Total</span>
+                            </div>
+                            <div class="text-2xl font-bold" id="totalKg">0.00</div>
+                            <div class="text-sm opacity-80">kgCO2e</div>
+                            <div class="mt-1 text-lg font-semibold" id="totalTon">0.0000 tCO2e</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-2xl shadow-sm border p-6">
+                            <h3 class="text-lg font-semibold mb-4">สัดส่วน Carbon Footprint ตาม Scope</h3>
+                            <div class="flex justify-center" style="height:300px"><canvas id="scopeChart"></canvas></div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border p-6">
+                            <h3 class="text-lg font-semibold mb-4">Carbon Footprint แยกตามกิจกรรม</h3>
+                            <div style="height:300px"><canvas id="activityChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Breakdown -->
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <h3 class="text-lg font-semibold mb-4">รายละเอียดตามกิจกรรม</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">กิจกรรม</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">Scope</th>
+                                        <th class="text-right py-3 px-4 font-semibold text-gray-600">kgCO2e</th>
+                                        <th class="text-right py-3 px-4 font-semibold text-gray-600">สัดส่วน</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cooking Page (Scope 1) -->
+                <div id="page-cooking" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center"><i class="fas fa-fire-burner text-amber-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">การปรุงอาหาร (Scope 1)</h3>
+                                <p class="text-sm text-gray-500">ก๊าซหุงต้ม LPG ที่ใช้ในการปรุงอาหาร</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">ปริมาณก๊าซหุงต้มที่ใช้ (kg)</label>
+                                <input type="number" id="lpgAmount" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" step="0.1" oninput="calcCooking()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 3.1134 kgCO2e/kg (IPCC Vol.2)</p>
+                            </div>
+                            <div class="bg-amber-50 rounded-xl p-4">
+                                <div class="text-sm text-amber-800 font-medium mb-1">ผลการคำนวณ</div>
+                                <div class="text-3xl font-bold text-amber-700" id="cookingResult">0.00</div>
+                                <div class="text-sm text-amber-600">kgCO2e</div>
+                                <div class="mt-2 text-xs text-amber-500">สูตร: ปริมาณ LPG (kg) × 3.1134</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Electricity Page (Scope 2) -->
+                <div id="page-electricity" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-bolt text-blue-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">พลังงานไฟฟ้า (Scope 2)</h3>
+                                <p class="text-sm text-gray-500">ไฟฟ้าที่ใช้ในงาน หรือคำนวณจากอุปกรณ์</p>
+                            </div>
+                        </div>
+
+                        <!-- Tab Switch -->
+                        <div class="flex gap-2 mb-6 bg-gray-100 rounded-xl p-1">
+                            <button onclick="switchElecTab('direct')" id="elecTabDirect" class="flex-1 py-2 px-4 rounded-lg text-sm font-medium bg-white shadow-sm text-primary-700">กรอกค่าไฟฟ้าโดยตรง</button>
+                            <button onclick="switchElecTab('calc')" id="elecTabCalc" class="flex-1 py-2 px-4 rounded-lg text-sm font-medium text-gray-500">คำนวณจากอุปกรณ์</button>
+                        </div>
+
+                        <!-- Direct Input -->
+                        <div id="elecDirect">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-2">ปริมาณไฟฟ้าที่ใช้ (kWh)</label>
+                                    <input type="number" id="elecKwh" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" step="0.1" oninput="calcElectricity()">
+                                    <p class="text-xs text-gray-400 mt-1">EF = 0.4999 kgCO2e/kWh (Thai Grid)</p>
+                                </div>
+                                <div class="bg-blue-50 rounded-xl p-4">
+                                    <div class="text-sm text-blue-800 font-medium mb-1">ผลการคำนวณ</div>
+                                    <div class="text-3xl font-bold text-blue-700" id="elecResult">0.00</div>
+                                    <div class="text-sm text-blue-600">kgCO2e</div>
+                                    <div class="mt-2 text-xs text-blue-500">สูตร: kWh × 0.4999</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Equipment Calculator -->
+                        <div id="elecCalc" class="hidden">
+                            <div class="space-y-4 mb-6">
+                                <!-- AC Section -->
+                                <div class="border rounded-xl p-4">
+                                    <h4 class="font-semibold text-sm mb-3"><i class="fas fa-snowflake text-blue-500 mr-2"></i>ระบบปรับอากาศ</h4>
+                                    <div id="acItems"></div>
+                                    <button onclick="addAcItem()" class="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                        <i class="fas fa-plus mr-1"></i> เพิ่มเครื่องปรับอากาศ
+                                    </button>
+                                </div>
+                                <!-- Lighting Section -->
+                                <div class="border rounded-xl p-4">
+                                    <h4 class="font-semibold text-sm mb-3"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i>ระบบแสงสว่าง</h4>
+                                    <div id="lightItems"></div>
+                                    <button onclick="addLightItem()" class="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                        <i class="fas fa-plus mr-1"></i> เพิ่มหลอดไฟ
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 rounded-xl p-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="text-sm text-blue-800 font-medium mb-1">รวมไฟฟ้าจากอุปกรณ์</div>
+                                        <div class="text-sm text-blue-500" id="elecCalcKwh">0.00 kWh</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-3xl font-bold text-blue-700" id="elecCalcResult">0.00</div>
+                                        <div class="text-sm text-blue-600">kgCO2e</div>
+                                    </div>
+                                </div>
+                                <button onclick="applyEquipmentCalc()" class="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                                    <i class="fas fa-check mr-1"></i> ใช้ค่านี้
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transportation Page (Scope 3) -->
+                <div id="page-transport" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center"><i class="fas fa-car text-pink-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">การเดินทาง (Scope 3)</h3>
+                                <p class="text-sm text-gray-500">การเดินทางของผู้เข้าร่วมงาน</p>
+                            </div>
+                        </div>
+
+                        <div id="transportItems" class="space-y-4"></div>
+
+                        <button onclick="addTransportItem()" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-xl text-sm font-medium hover:bg-primary-100 transition">
+                            <i class="fas fa-plus"></i> เพิ่มรายการเดินทาง
+                        </button>
+                    </div>
+
+                    <!-- Flight Section -->
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <h4 class="font-semibold mb-4"><i class="fas fa-plane text-indigo-500 mr-2"></i>เที่ยวบิน</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">เที่ยวบินในประเทศ (pkm)</label>
+                                <input type="number" id="flightDomestic" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="calcTransport()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 0.1192 kgCO2e/pkm</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">เที่ยวบินระหว่างประเทศ (pkm)</label>
+                                <input type="number" id="flightInternational" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="calcTransport()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 0.0936 kgCO2e/pkm</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transport Summary -->
+                    <div class="bg-pink-50 rounded-2xl p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-sm text-pink-800 font-medium">รวมการเดินทาง</div>
+                                <div class="text-xs text-pink-500 mt-1" id="transportBreakdown"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-pink-700" id="transportResult">0.00</div>
+                                <div class="text-sm text-pink-600">kgCO2e</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accommodation Page -->
+                <div id="page-accommodation" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center"><i class="fas fa-hotel text-purple-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">การพักแรม (Scope 3)</h3>
+                                <p class="text-sm text-gray-500">จำนวนผู้พักแรม (คน-คืน)</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">จำนวนผู้พักแรม (คน-คืน)</label>
+                                <input type="number" id="accomNights" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="calcAccommodation()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 7.97 kgCO2e/คน-คืน (carbonzero.co.nz)</p>
+                                <div class="mt-4 bg-gray-50 rounded-xl p-3">
+                                    <p class="text-xs text-gray-500">ตัวอย่าง: ผู้เข้าร่วม 50 คน พัก 2 คืน = 100 คน-คืน</p>
+                                </div>
+                            </div>
+                            <div class="bg-purple-50 rounded-xl p-4">
+                                <div class="text-sm text-purple-800 font-medium mb-1">ผลการคำนวณ</div>
+                                <div class="text-3xl font-bold text-purple-700" id="accomResult">0.00</div>
+                                <div class="text-sm text-purple-600">kgCO2e</div>
+                                <div class="mt-2 text-xs text-purple-500">สูตร: คน-คืน × 7.97</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Page -->
+                <div id="page-food" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center"><i class="fas fa-utensils text-orange-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">อาหาร (Scope 3)</h3>
+                                <p class="text-sm text-gray-500">อาหารที่เสิร์ฟในงาน</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">อาหารปกติ (จำนวนคน)</label>
+                                <input type="number" id="foodNormal" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="calcFood()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 2.4432 kgCO2e/คน</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">อาหารมังสวิรัติ (จำนวนคน)</label>
+                                <input type="number" id="foodVeg" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" oninput="calcFood()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 0.7496 kgCO2e/คน</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 bg-orange-50 rounded-xl p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="text-sm text-orange-800 font-medium">รวมอาหาร</div>
+                                    <div class="text-xs text-orange-500 mt-1" id="foodBreakdown"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-orange-700" id="foodResult">0.00</div>
+                                    <div class="text-sm text-orange-600">kgCO2e</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Page -->
+                <div id="page-documents" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center"><i class="fas fa-file-alt text-teal-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">เอกสารแจก (Scope 3)</h3>
+                                <p class="text-sm text-gray-500">เอกสาร สิ่งพิมพ์ และบรรจุภัณฑ์</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">กระดาษ (kg)</label>
+                                <input type="number" id="docPaper" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" step="0.1" oninput="calcDocuments()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 2.102 kgCO2e/kg</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">พลาสติก (kg)</label>
+                                <input type="number" id="docPlastic" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="0" min="0" step="0.1" oninput="calcDocuments()">
+                                <p class="text-xs text-gray-400 mt-1">EF = 2.6922 kgCO2e/kg</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 bg-teal-50 rounded-xl p-4">
+                            <div class="flex justify-between items-center">
+                                <div><div class="text-sm text-teal-800 font-medium">รวมเอกสาร</div></div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-teal-700" id="docResult">0.00</div>
+                                    <div class="text-sm text-teal-600">kgCO2e</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waste Page -->
+                <div id="page-waste" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center"><i class="fas fa-trash-alt text-red-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">ของเสียหลังการจัดงาน (Scope 3)</h3>
+                                <p class="text-sm text-gray-500">ขยะและของเสียที่เกิดจากการจัดงาน</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="wasteInputs">
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50 rounded-2xl p-6">
+                        <div class="flex justify-between items-center">
+                            <div><div class="text-sm text-red-800 font-medium">รวมของเสีย</div></div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-red-700" id="wasteResult">0.00</div>
+                                <div class="text-sm text-red-600">kgCO2e</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EF Reference Page -->
+                <div id="page-ef-reference" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center"><i class="fas fa-book text-indigo-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">ค่า Emission Factor (EF) อ้างอิง</h3>
+                                <p class="text-sm text-gray-500">แหล่งที่มาของค่า EF ที่ใช้ในการคำนวณ</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">รายการ</th>
+                                        <th class="text-right py-3 px-4 font-semibold text-gray-600">EF (kgCO2e/หน่วย)</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">ที่มา</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="efTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distance Reference Page -->
+                <div id="page-distance" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center"><i class="fas fa-route text-green-600"></i></div>
+                            <div>
+                                <h3 class="text-lg font-semibold">ระยะทางจากกรุงเทพ</h3>
+                                <p class="text-sm text-gray-500">ระยะทางต่างจังหวัด (ที่มา: TAT)</p>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <input type="text" id="distSearch" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400" placeholder="ค้นหาจังหวัด..." oninput="filterDistance()">
+                        </div>
+                        <div class="overflow-x-auto" style="max-height:500px; overflow-y:auto">
+                            <table class="w-full text-sm">
+                                <thead class="sticky top-0 bg-white">
+                                    <tr class="bg-gray-50">
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">ลำดับ</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">ต้นทาง</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-600">ปลายทาง</th>
+                                        <th class="text-right py-3 px-4 font-semibold text-gray-600">ระยะทาง (km)</th>
+                                        <th class="text-center py-3 px-4 font-semibold text-gray-600">เลือกใช้</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="distTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Page -->
+                <div id="page-report" class="page fade-in">
+                    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center"><i class="fas fa-file-export text-primary-600"></i></div>
+                                <div>
+                                    <h3 class="text-lg font-semibold">รายงานสรุป Carbon Footprint</h3>
+                                    <p class="text-sm text-gray-500">สรุปผลการคำนวณทั้งหมด</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="exportCSV()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition">
+                                    <i class="fas fa-file-csv"></i> Export CSV
+                                </button>
+                                <button onclick="printReport()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+                                    <i class="fas fa-print"></i> พิมพ์
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="reportContent">
+                            <!-- Report Header -->
+                            <div class="text-center mb-8 border-b pb-6">
+                                <h2 class="text-2xl font-bold text-gray-800">รายงาน Carbon Footprint for Event</h2>
+                                <p class="text-gray-500 mt-1" id="reportEventName">-</p>
+                                <p class="text-sm text-gray-400" id="reportEventDate">-</p>
+                            </div>
+
+                            <!-- Scope Summary -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                <div class="border-2 border-amber-200 rounded-xl p-4 text-center">
+                                    <div class="text-sm font-semibold text-amber-700">Scope 1</div>
+                                    <div class="text-sm text-gray-500">การเผาไหม้โดยตรง</div>
+                                    <div class="text-2xl font-bold text-amber-600 mt-2" id="rptScope1">0.00</div>
+                                    <div class="text-xs text-gray-400">kgCO2e</div>
+                                    <div class="text-sm font-semibold text-amber-500 mt-1" id="rptScope1Pct">0%</div>
+                                </div>
+                                <div class="border-2 border-blue-200 rounded-xl p-4 text-center">
+                                    <div class="text-sm font-semibold text-blue-700">Scope 2</div>
+                                    <div class="text-sm text-gray-500">พลังงานไฟฟ้า</div>
+                                    <div class="text-2xl font-bold text-blue-600 mt-2" id="rptScope2">0.00</div>
+                                    <div class="text-xs text-gray-400">kgCO2e</div>
+                                    <div class="text-sm font-semibold text-blue-500 mt-1" id="rptScope2Pct">0%</div>
+                                </div>
+                                <div class="border-2 border-pink-200 rounded-xl p-4 text-center">
+                                    <div class="text-sm font-semibold text-pink-700">Scope 3</div>
+                                    <div class="text-sm text-gray-500">ทางอ้อม</div>
+                                    <div class="text-2xl font-bold text-pink-600 mt-2" id="rptScope3">0.00</div>
+                                    <div class="text-xs text-gray-400">kgCO2e</div>
+                                    <div class="text-sm font-semibold text-pink-500 mt-1" id="rptScope3Pct">0%</div>
+                                </div>
+                            </div>
+
+                            <!-- Detail Table -->
+                            <div class="overflow-x-auto mb-8">
+                                <table class="w-full text-sm border">
+                                    <thead>
+                                        <tr class="bg-primary-700 text-white">
+                                            <th class="py-3 px-4 text-left">Scope</th>
+                                            <th class="py-3 px-4 text-left">รายการหลัก</th>
+                                            <th class="py-3 px-4 text-left">รายการย่อย</th>
+                                            <th class="py-3 px-4 text-right">ปริมาณ</th>
+                                            <th class="py-3 px-4 text-left">หน่วย</th>
+                                            <th class="py-3 px-4 text-right">EF</th>
+                                            <th class="py-3 px-4 text-right">CF (kgCO2e)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTable"></tbody>
+                                    <tfoot>
+                                        <tr class="bg-primary-50 font-bold">
+                                            <td colspan="6" class="py-3 px-4 text-right">รวมทั้งหมด</td>
+                                            <td class="py-3 px-4 text-right" id="rptTotal">0.00</td>
+                                        </tr>
+                                        <tr class="bg-primary-100 font-bold text-primary-800">
+                                            <td colspan="6" class="py-3 px-4 text-right">รวมทั้งหมด (tCO2e)</td>
+                                            <td class="py-3 px-4 text-right" id="rptTotalTon">0.0000</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- Per Capita -->
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-600">Carbon Footprint ต่อผู้เข้าร่วม 1 คน</span>
+                                    <span class="text-xl font-bold text-primary-700" id="rptPerCapita">- kgCO2e/คน</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
